@@ -12,9 +12,9 @@ import System.Exit
 type GameState = InputState
 
 data InputState =
-  InputState { esc :: Bool
-             , left :: Bool
-             }
+  InputState { a :: Bool
+             , b :: Bool
+             } deriving Show
 
 --------------------------------------------------------------------------------
 --Settings
@@ -66,7 +66,7 @@ draw :: GameState -> IO Picture
 draw = drawNothing
 
 --------------------------------------------------------------------------------
---Event And Time Handling
+--Generic Event/Time Handling
 
 ignoreHandling :: Applicative f => a -> b -> f b
 ignoreHandling = const pure
@@ -74,11 +74,31 @@ ignoreHandling = const pure
 printHandling :: Show a => a -> b -> IO b
 printHandling a b = const b <$> (putStrLn $ show a)
 
+printState :: Show b => a -> b -> IO b
+printState a b = const b <$> (putStrLn $ show b)
+
+--------------------------------------------------------------------------------
+--Event Handling
+
 eventHandler :: Event -> GameState -> IO GameState
-eventHandler = printHandling
+eventHandler e@(EventKey _ _ _ _) = eventKeyHandler e
+eventHandler _ = pure
+
+eventKeyHandler :: Event -> GameState -> IO GameState
+eventKeyHandler (EventKey k s _ _) state = case k of
+  (Char 'a') -> pure $ state {a = ksToBool s}
+  (Char 'b') -> pure $ state {b = ksToBool s}
+  (SpecialKey KeyEsc) -> exitSuccess
+
+ksToBool :: KeyState -> Bool
+ksToBool Down = True
+ksToBool Up = False
+
+--------------------------------------------------------------------------------
+--Time Handling
 
 timeHandler :: Float -> GameState -> IO GameState
-timeHandler = ignoreHandling
+timeHandler = printState
 
 --------------------------------------------------------------------------------
 --Main
